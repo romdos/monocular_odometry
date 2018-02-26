@@ -1,0 +1,8 @@
+prefix=/home/roman/catkin_ws/src/monocular_odometry/cmake-build-debug/devel
+
+Name: monocular_odometry
+Description: Description of monocular_odometry
+Version: 0.0.0
+Cflags: -I/home/roman/catkin_ws/src/monocular_odometry/include
+Libs: -L/home/roman/catkin_ws/src/monocular_odometry/cmake-build-debug/devel/lib 
+Requires: 

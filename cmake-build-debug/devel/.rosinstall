@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/roman/catkin_ws/src/monocular_odometry/cmake-build-debug/devel/setup.sh
