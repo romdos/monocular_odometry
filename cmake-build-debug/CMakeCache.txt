@@ -348,7 +348,7 @@ xmlrpcpp_DIR:PATH=/opt/ros/kinetic/share/xmlrpcpp/cmake
 ########################
 
 //catkin environment
-CATKIN_ENV:INTERNAL=/home/roman/catkin_ws/src/monocular_odometry/cmake-build-debug/catkin_generated/env_cached.sh
+CATKIN_ENV:INTERNAL=
 CATKIN_TEST_RESULTS_DIR:INTERNAL=/home/roman/catkin_ws/src/monocular_odometry/cmake-build-debug/test_results
 //ADVANCED property for variable: CMAKE_AR
 CMAKE_AR-ADVANCED:INTERNAL=1

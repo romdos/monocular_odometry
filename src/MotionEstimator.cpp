@@ -1,21 +1,35 @@
-//
-// Created by roman on 26.02.18.
-//
-
 #include "MotionEstimator.h"
 
-MotionEstimator::MotionEstimator(const char *parameters)
+MotionEstimator::MotionEstimator(const char* parameters)
 {
-    // todo: read parameters: focus and pixel size
+    std::string line;
+    try
+    {
+        std::ifstream file(parameters);
+        std::getline(file, line);
+        focus_ = atof(line.substr(line.find_first_of(".0123456789")).c_str());
+        std::getline(file, line);
+        pixel_size_ = atof(line.substr(line.find_first_of(".0123456789")).c_str());
+        std::getline(file, line);
+        height_ = atof(line.substr(line.find_first_of(".0123456789")).c_str());
+    }
+    catch (std::out_of_range )
+    {
+        std::cerr << "Could not file with parameters. Replace path to the directory with your own.\n";
+    };
 
-    pub_ = nh_.advertise<geometry_msgs::Pose>("transform", 1000);
+    pub_ = nh_.advertise<geometry_msgs::Pose>("/transform", 5);
 
-    sub_ = nh_.subscribe("/camera/image_raw", 1, processFrame);
+    sub_ = nh_.subscribe("/usb_cam/image_raw", 1, &MotionEstimator::processFrame, this);
+    rotation_matrix_ = cv::Mat::eye(3, 3, CV_32FC1);
+    camera_pose_.position.x = 0;
+    camera_pose_.position.y = 0;
+    camera_pose_.position.z = 0;
+    time_now_ = ros::Time::now().toSec();
 
-    pub_.publish(camera_pose_);
 }
 
-void MotionEstimator::processFrame(const sensor_msgs::ImageConstPtr &msg)
+void MotionEstimator::processFrame(const sensor_msgs::ImageConstPtr& msg)
 {
     cv_bridge::CvImagePtr cv_ptr;
     try
@@ -28,7 +42,9 @@ void MotionEstimator::processFrame(const sensor_msgs::ImageConstPtr &msg)
         return;
     }
 
-    findCameraPose(cv_ptr, 0.0001);
+    findCameraPose(cv_ptr, 0.4);
+    pub_.publish(camera_pose_);
+
 }
 
 void MotionEstimator::findCameraPose(cv_bridge::CvImagePtr& cv_ptr, float time_threshold)
@@ -38,55 +54,59 @@ void MotionEstimator::findCameraPose(cv_bridge::CvImagePtr& cv_ptr, float time_t
     int scale = 1;
     int delta = 0;
     int ddepth = CV_32FC1;
-    cv::Mat norm_frame;
-    cv::Mat grad_x, grad_y;
 
-    if (cv_ptr -> header.stamp.sec < time_threshold) // todo: adjust
+    if (cv_ptr -> header.stamp.toSec() - time_now_ < time_threshold) // todo: adjust
     {
         previous_frame_ = cv_ptr -> image;
         previous_frame_.convertTo(previous_frame_, CV_32FC1, 1.0 / 255.0);
 
-        Sobel(previous_frame_, grad_x, ddepth, 1, 0, 3, scale, delta, cv::BORDER_DEFAULT);
-        Sobel(previous_frame_, grad_y, ddepth, 0, 1, 3, scale, delta, cv::BORDER_DEFAULT);
+        Sobel(previous_frame_, grad_x_, ddepth, 1, 0, 3, scale, delta, cv::BORDER_DEFAULT);
+        Sobel(previous_frame_, grad_y_, ddepth, 0, 1, 3, scale, delta, cv::BORDER_DEFAULT);
+        printf("%g\n", cv_ptr -> header.stamp.toSec() - time_now_);
 
         return;
     }
 
-    cv::Vec3d translation(0, 0, 0);          // translation relative to initial coordinate frame
-    cv::Vec3d current_translation(0, 0, 0); // translation between current consequent frames
-
-    cv::Mat rotation_matrix         = cv::Mat::eye(3, 3, CV_32FC1);
-    cv::Mat current_rotation_matrix = cv::Mat::eye(3, 3, CV_32FC1);
-
+    cv::Mat norm_frame;
     frame.convertTo(norm_frame, CV_32FC1, 1.0 / 255.0);
 
     cv::Mat diff = norm_frame - previous_frame_;
     /* Least Squares Method for transform parameters finding */
-    cv::Mat transform_params = least_squares_method(diff, grad_x, grad_y);
-    /* Translation vector */
-    current_translation = cv::Vec3f(transform_params.at<float>(0, 0),
-                                transform_params.at<float>(1, 0),
-                                transform_params.at<float>(2, 0));
-    /* Rotation */
-    updateRotationMatrix(rotation_matrix, transform_params.at<float>(3, 0),
+    cv::Mat transform_params = least_squares_method(diff);
+//    /* Translation vector */
+
+//    cv::Vec3f current_translation(transform_params.at<float>(0, 0),
+//                                  transform_params.at<float>(1, 0),
+//                                  transform_params.at<float>(2, 0));
+    cv::Vec3f current_translation(1.2,
+                                  2.1,
+                                  3.3);
+//    /* Rotation */
+    updateRotationMatrix(transform_params.at<float>(3, 0),
                          transform_params.at<float>(4, 0),
                          transform_params.at<float>(5, 0));
 
-    translation = translation + rotation_matrix * current_translation;
-    // todo: make a camera_pose!
-    previous_frame_ = norm_frame.clone();
+    std::cout << current_translation << std::endl;
+    std::cout << rotation_matrix_ << std::endl;
+    std::cout << rotation_matrix_.dot(current_translation.t()) << std::endl;
 
-    Sobel(previous_frame_, grad_x, ddepth, 1, 0, 3, scale, delta, cv::BORDER_DEFAULT);
-    Sobel(previous_frame_, grad_y, ddepth, 0, 1, 3, scale, delta, cv::BORDER_DEFAULT);
+//    camera_pose_.position.x += rotation_matrix.dot(current_translation)(0);
+//    camera_pose_.position.y += rotation_matrix.dot(current_translation)(1);
+//    camera_pose_.position.z += rotation_matrix.dot(current_translation)(2);
+//
+//    // todo: camera orientation -> quaternions!
+//
+//    previous_frame_ = norm_frame.clone();
+//
+//    Sobel(previous_frame_, grad_x_, ddepth, 1, 0, 3, scale, delta, cv::BORDER_DEFAULT);
+//    Sobel(previous_frame_, grad_y_, ddepth, 0, 1, 3, scale, delta, cv::BORDER_DEFAULT);
 
 }
 
-cv::Mat MotionEstimator::least_squares_method(const cv::Mat &diff, const cv::Mat &grad_x, const cv::Mat &grad_y)
+cv::Mat MotionEstimator::least_squares_method(const cv::Mat &diff)
 {
     int image_width  = diff.cols;
     int image_height = diff.rows;
-
-    float k = 0.1; // todo: pixel size: mm / px
 
     // todo: sum over ROI !
     float alpha = 1.0;
@@ -100,17 +120,15 @@ cv::Mat MotionEstimator::least_squares_method(const cv::Mat &diff, const cv::Mat
     {
         for (int j = 0; j < image_width; j++)
         {
-            float dI = diff.at<float>(i, j);
-            if (dI < 0)
-                dI = 0;
+            float dI = fabs(diff.at<float>(i, j));
 
-            float I_x = grad_x.at<float>(i, j);
-            float I_y = grad_y.at<float>(i, j);
+            float I_x = grad_x_.at<float>(i, j);
+            float I_y = grad_y_.at<float>(i, j);
 
-            float y_horizont = k * vertical_level;
+            float y_horizont = pixel_size_ * vertical_level;
 
-            float y = y_horizont + k * (i + 1);
-            float x = k * j;
+            float y = y_horizont + pixel_size_ * (i + 1);
+            float x = pixel_size_ * j;
 
             float Z = focus_ * height_ / (y - y_horizont);
 
@@ -129,7 +147,7 @@ cv::Mat MotionEstimator::least_squares_method(const cv::Mat &diff, const cv::Mat
 
 }
 
-void updateRotationMatrix(cv::Mat & rotation_matrix, const float pitch, const float roll, const float yaw)
+void MotionEstimator::updateRotationMatrix(const float pitch, const float roll, const float yaw)
 {
     /* Transform matrix construction */
     cv::Mat pitch_matrix = cv::Mat::zeros(3, 3, CV_32FC1);
@@ -171,6 +189,6 @@ void updateRotationMatrix(cv::Mat & rotation_matrix, const float pitch, const fl
     yaw_matrix.at<float>(1, 0) = -sin(yaw);
     yaw_matrix.at<float>(2, 1) = cos(yaw);
 
-    current_rotation_matrix = yaw_matrix * pitch_matrix * roll_matrix;
-    rotation_matrix = rotation_matrix * current_rotation_matrix;
+    current_rotation_matrix = yaw_matrix * (pitch_matrix * roll_matrix);
+    rotation_matrix_ = rotation_matrix_ * current_rotation_matrix;
 }
