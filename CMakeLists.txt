@@ -11,7 +11,10 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
         sensor_msgs
         cv_bridge
+<<<<<<< HEAD
         image_transport
+=======
+>>>>>>> 40262e898537c9a820bf3629ca50262b50e41a32
   roscpp
   std_msgs
 )
