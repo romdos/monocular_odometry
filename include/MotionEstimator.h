@@ -22,15 +22,10 @@ public:
 
     void processFrame(const sensor_msgs::ImageConstPtr& msg);
     void findCameraPose(cv_bridge::CvImagePtr & image, float time_threshold);
-    cv::Mat least_squares_method(const cv::Mat & diff);
+    cv::Mat_<double> least_squares_method(const cv::Mat & diff);
     void updateRotationMatrix(const float pitch, const float roll, const float yaw);
 
 private:
-    float focus_;
-    float pixel_size_;
-    float height_;
-
-//    image_transport::Publisher pub_;
     double focus_;
     double pixel_size_;
     double height_;
@@ -41,11 +36,11 @@ private:
 
     cv::Mat previous_frame_;
     cv::Mat grad_x_, grad_y_;
-    cv::Mat_<float> rotation_matrix_;
+    cv::Mat_<double> rotation_matrix_;
+    geometry_msgs::PoseStamped camera_pose_;
 
     double time_now_;
 
-    geometry_msgs::PoseStamped camera_pose_;
 };
 
 #endif //MONOCULAR_ODOMETRY_MOTIONESTIMATOR_H

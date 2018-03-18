@@ -7,9 +7,10 @@
 -- Using CATKIN_ENABLE_TESTING: ON
 -- Call enable_testing()
 -- Using CATKIN_TEST_RESULTS_DIR: /home/roman/catkin_ws/src/monocular_odometry/cmake-build-debug/test_results
--- Found gtest sources under '/usr/src/gtest': gtests will be built
+-- Found gmock sources under '/usr/src/gmock': gmock will be built
+-- Found gtest sources under '/usr/src/gmock': gtests will be built
 -- Using Python nosetests: /usr/bin/nosetests-2.7
--- catkin 0.7.8
+-- catkin 0.7.11
 Traceback (most recent call last):
   File "/home/roman/catkin_ws/src/monocular_odometry/cmake-build-debug/catkin_generated/generate_cached_setup.py", line 20, in <module>
     from catkin.environment_cache import generate_environment_script
