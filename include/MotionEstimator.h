@@ -7,16 +7,12 @@
 #include <ros/ros.h>
 #include <std_msgs/Duration.h>
 #include <std_msgs/String.h>
-<<<<<<< HEAD
+
 #include <geometry_msgs/PoseStamped.h>
 #include <sensor_msgs/Image.h>
-#include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
-=======
 #include <geometry_msgs/Pose.h>
-#include <sensor_msgs/Image.h>
 #include <cv_bridge/cv_bridge.h>
->>>>>>> 40262e898537c9a820bf3629ca50262b50e41a32
 
 class MotionEstimator
 {
@@ -30,22 +26,17 @@ public:
     void updateRotationMatrix(const float pitch, const float roll, const float yaw);
 
 private:
-<<<<<<< HEAD
     float focus_;
     float pixel_size_;
     float height_;
 
-    ros::NodeHandle nh_;
-    ros::Publisher pub_;
 //    image_transport::Publisher pub_;
-=======
     double focus_;
     double pixel_size_;
     double height_;
 
     ros::NodeHandle nh_;
     ros::Publisher pub_;
->>>>>>> 40262e898537c9a820bf3629ca50262b50e41a32
     ros::Subscriber sub_;
 
     cv::Mat previous_frame_;
@@ -53,11 +44,8 @@ private:
     cv::Mat_<float> rotation_matrix_;
 
     double time_now_;
-<<<<<<< HEAD
+
     geometry_msgs::PoseStamped camera_pose_;
-=======
-    geometry_msgs::Pose camera_pose_;
->>>>>>> 40262e898537c9a820bf3629ca50262b50e41a32
 };
 
 #endif //MONOCULAR_ODOMETRY_MOTIONESTIMATOR_H

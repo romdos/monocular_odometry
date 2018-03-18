@@ -13,16 +13,11 @@ MotionEstimator::MotionEstimator(const char* parameters)
         std::getline(file, line);
         height_ = atof(line.substr(line.find_first_of(".0123456789")).c_str());
     }
-<<<<<<< HEAD
     catch (std::out_of_range &e)
-=======
-    catch (std::out_of_range )
->>>>>>> 40262e898537c9a820bf3629ca50262b50e41a32
     {
         std::cerr << "Could not file with parameters. Replace path to the directory with your own.\n";
     };
 
-<<<<<<< HEAD
     sub_ = nh_.subscribe("/usb_cam/image_raw", 1, &MotionEstimator::processFrame, this);
     pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/transform", 5);
     image_transport::ImageTransport it(nh_);
@@ -36,17 +31,12 @@ MotionEstimator::MotionEstimator(const char* parameters)
 
     camera_pose_.header.frame_id = "camera_frame";
     time_now_ = ros::Time::now().toSec();
-=======
     pub_ = nh_.advertise<geometry_msgs::Pose>("/transform", 5);
 
     sub_ = nh_.subscribe("/usb_cam/image_raw", 1, &MotionEstimator::processFrame, this);
     rotation_matrix_ = cv::Mat::eye(3, 3, CV_32FC1);
-    camera_pose_.position.x = 0;
-    camera_pose_.position.y = 0;
-    camera_pose_.position.z = 0;
     time_now_ = ros::Time::now().toSec();
 
->>>>>>> 40262e898537c9a820bf3629ca50262b50e41a32
 }
 
 void MotionEstimator::processFrame(const sensor_msgs::ImageConstPtr& msg)
@@ -54,12 +44,8 @@ void MotionEstimator::processFrame(const sensor_msgs::ImageConstPtr& msg)
     cv_bridge::CvImagePtr cv_ptr;
     try
     {
-<<<<<<< HEAD
-        cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8); // todo: read grayscale
-=======
-        cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
->>>>>>> 40262e898537c9a820bf3629ca50262b50e41a32
-    }
+         cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8); // todo: read grayscale
+     }
     catch (cv_bridge::Exception& e)
     {
         ROS_ERROR("cv_bridge exception: %s", e.what());
@@ -74,10 +60,7 @@ void MotionEstimator::processFrame(const sensor_msgs::ImageConstPtr& msg)
 void MotionEstimator::findCameraPose(cv_bridge::CvImagePtr& cv_ptr, float time_threshold)
 {
     cv::Mat frame = cv_ptr -> image;
-<<<<<<< HEAD
 
-=======
->>>>>>> 40262e898537c9a820bf3629ca50262b50e41a32
     /* Gradient estimation via Sobel operator */
     int scale = 1;
     int delta = 0;
@@ -85,14 +68,11 @@ void MotionEstimator::findCameraPose(cv_bridge::CvImagePtr& cv_ptr, float time_t
 
     if (cv_ptr -> header.stamp.toSec() - time_now_ < time_threshold) // todo: adjust
     {
-<<<<<<< HEAD
-        previous_frame_ = frame;
+         previous_frame_ = frame;
         cvtColor(previous_frame_, previous_frame_, CV_BGR2GRAY);
 
-=======
-        previous_frame_ = cv_ptr -> image;
->>>>>>> 40262e898537c9a820bf3629ca50262b50e41a32
-        previous_frame_.convertTo(previous_frame_, CV_32FC1, 1.0 / 255.0);
+         previous_frame_ = cv_ptr -> image;
+         previous_frame_.convertTo(previous_frame_, CV_32FC1, 1.0 / 255.0);
 
         Sobel(previous_frame_, grad_x_, ddepth, 1, 0, 3, scale, delta, cv::BORDER_DEFAULT);
         Sobel(previous_frame_, grad_y_, ddepth, 0, 1, 3, scale, delta, cv::BORDER_DEFAULT);
@@ -102,51 +82,36 @@ void MotionEstimator::findCameraPose(cv_bridge::CvImagePtr& cv_ptr, float time_t
     }
 
     cv::Mat norm_frame;
-<<<<<<< HEAD
     cvtColor(frame, frame, CV_BGR2GRAY);
 
-=======
->>>>>>> 40262e898537c9a820bf3629ca50262b50e41a32
     frame.convertTo(norm_frame, CV_32FC1, 1.0 / 255.0);
 
     cv::Mat diff = norm_frame - previous_frame_;
     /* Least Squares Method for transform parameters finding */
     cv::Mat transform_params = least_squares_method(diff);
 //    /* Translation vector */
-
-<<<<<<< HEAD
     cv::Vec3f current_translation(transform_params.at<float>(0, 0),
                                   transform_params.at<float>(1, 0),
                                   transform_params.at<float>(2, 0));
 
-=======
-//    cv::Vec3f current_translation(transform_params.at<float>(0, 0),
-//                                  transform_params.at<float>(1, 0),
-//                                  transform_params.at<float>(2, 0));
-    cv::Vec3f current_translation(1.2,
-                                  2.1,
-                                  3.3);
->>>>>>> 40262e898537c9a820bf3629ca50262b50e41a32
-//    /* Rotation */
+ //    /* Rotation */
     updateRotationMatrix(transform_params.at<float>(3, 0),
                          transform_params.at<float>(4, 0),
                          transform_params.at<float>(5, 0));
 
-<<<<<<< HEAD
-    cv::Mat_<float> translation = rotation_matrix_ * cv::Mat(current_translation);
+     cv::Mat_<float> translation = rotation_matrix_ * cv::Mat(current_translation);
     camera_pose_.pose.position.x += translation(0, 0);
     camera_pose_.pose.position.y += translation(1, 0);
     camera_pose_.pose.position.z += translation(2, 0);
 
-//    // todo: camera orientation -> quaternions!
-//
+    // todo: camera orientation -> quaternions!
+
     previous_frame_ = norm_frame.clone();
 //
     Sobel(previous_frame_, grad_x_, ddepth, 1, 0, 3, scale, delta, cv::BORDER_DEFAULT);
     Sobel(previous_frame_, grad_y_, ddepth, 0, 1, 3, scale, delta, cv::BORDER_DEFAULT);
 //    sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", norm_frame).toImageMsg();
 //    pub_.publish(msg);
-=======
     std::cout << current_translation << std::endl;
     std::cout << rotation_matrix_ << std::endl;
     std::cout << rotation_matrix_.dot(current_translation.t()) << std::endl;
@@ -162,23 +127,16 @@ void MotionEstimator::findCameraPose(cv_bridge::CvImagePtr& cv_ptr, float time_t
 //    Sobel(previous_frame_, grad_x_, ddepth, 1, 0, 3, scale, delta, cv::BORDER_DEFAULT);
 //    Sobel(previous_frame_, grad_y_, ddepth, 0, 1, 3, scale, delta, cv::BORDER_DEFAULT);
 
->>>>>>> 40262e898537c9a820bf3629ca50262b50e41a32
-}
+ }
 
 cv::Mat MotionEstimator::least_squares_method(const cv::Mat &diff)
 {
     int image_width  = diff.cols;
     int image_height = diff.rows;
 
-<<<<<<< HEAD
-    // todo: sum over ROI!
-    float alpha = 1.0;
-    auto vertical_level = (int) (alpha * image_height / 2);
-=======
-    // todo: sum over ROI !
+     // todo: sum over ROI!
     float alpha = 1.0;
     auto vertical_level = (int) (alpha * image_height / 2 + 1);
->>>>>>> 40262e898537c9a820bf3629ca50262b50e41a32
     int points_number = vertical_level * image_width;
 
     cv::Mat A = cv::Mat::zeros(points_number, 6, CV_32FC1);
@@ -188,22 +146,13 @@ cv::Mat MotionEstimator::least_squares_method(const cv::Mat &diff)
     {
         for (int j = 0; j < image_width; j++)
         {
-<<<<<<< HEAD
             float dI = diff.at<float>(i, j); // ~10^-3
-
             float I_x = grad_x_.at<float>(i, j);
             float I_y = grad_y_.at<float>(i, j); // ~10^-2
-=======
-            float dI = fabs(diff.at<float>(i, j));
-
-            float I_x = grad_x_.at<float>(i, j);
-            float I_y = grad_y_.at<float>(i, j);
->>>>>>> 40262e898537c9a820bf3629ca50262b50e41a32
 
             float y_horizont = pixel_size_ * vertical_level;
 
             float y = y_horizont + pixel_size_ * (i + 1);
-<<<<<<< HEAD
             float x = pixel_size_ * j;  // ~10^-2
 
             float Z = focus_ * height_ / (y - y_horizont);  // ~10^3
@@ -211,15 +160,6 @@ cv::Mat MotionEstimator::least_squares_method(const cv::Mat &diff)
             A.at<float>(i * image_width + j, 0) = -focus_ * I_x / Z;
             A.at<float>(i * image_width + j, 1) = -focus_ * I_y / Z;
             A.at<float>(i * image_width + j, 2) = (I_x * x + I_y * y) / Z; // very small
-=======
-            float x = pixel_size_ * j;
-
-            float Z = focus_ * height_ / (y - y_horizont);
-
-            A.at<float>(i * image_width + j, 0) = -focus_ * I_x;
-            A.at<float>(i * image_width + j, 1) = -focus_ * I_y;
-            A.at<float>(i * image_width + j, 2) = (I_x * x + I_y * y) / Z;
->>>>>>> 40262e898537c9a820bf3629ca50262b50e41a32
             A.at<float>(i * image_width + j, 3) = I_x * x * y / focus_ + I_y * (focus_ + y * y / focus_);
             A.at<float>(i * image_width + j, 4) = -(focus_ + x * x / focus_) * I_x - I_y * x * y / focus_;
             A.at<float>(i * image_width + j, 5) = I_x * y - I_y * x;
@@ -227,26 +167,16 @@ cv::Mat MotionEstimator::least_squares_method(const cv::Mat &diff)
             b.at<float>(i * image_width + j, 0) = dI;
         }
     }
-<<<<<<< HEAD
-    return (A.t() * A).inv() * A.t() * b;
-=======
 
     return (A.t() * A).inv() * A.t() * b;
-
->>>>>>> 40262e898537c9a820bf3629ca50262b50e41a32
 }
 
 void MotionEstimator::updateRotationMatrix(const float pitch, const float roll, const float yaw)
 {
     /* Transform matrix construction */
     cv::Mat pitch_matrix = cv::Mat::zeros(3, 3, CV_32FC1);
-<<<<<<< HEAD
     cv::Mat roll_matrix  = cv::Mat::zeros(3, 3, CV_32FC1);
     cv::Mat yaw_matrix   = cv::Mat::zeros(3, 3, CV_32FC1);
-=======
-    cv::Mat roll_matrix = cv::Mat::zeros(3, 3, CV_32FC1);
-    cv::Mat yaw_matrix = cv::Mat::zeros(3, 3, CV_32FC1);
->>>>>>> 40262e898537c9a820bf3629ca50262b50e41a32
 
     pitch_matrix.at<float>(0, 0) = 1;
     pitch_matrix.at<float>(0, 1) = 0;
